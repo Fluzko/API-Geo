@@ -1,0 +1,82 @@
+version: "3"
+
+services:
+  geo-api:
+    container_name: geo_api
+    build: ../geo-api
+    ports:
+      - "6000:6000"
+    networks:
+      - rabbit-network
+      - db-network
+    depends_on:
+      rabbit:
+        condition: service_started
+      db:
+        condition: service_started
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      RMQ_HOST: ${RMQ_HOST}
+      RMQ_PORT: ${RMQ_PORT}
+      RMQ_USERNAME: ${RMQ_USERNAME}
+      RMQ_PASSWORD: ${RMQ_PASSWORD}
+      RMQ_QUEUE: ${RMQ_QUEUE}
+      NODE_ENV: ${NODE_ENV}
+  
+  geocoder:
+    container_name: geocoder
+    build: ../geocoder
+    networks:
+      - rabbit-network
+    depends_on:
+      rabbit:
+        condition: service_started
+      db:
+        condition: service_started
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      RMQ_HOST: ${RMQ_HOST}
+      RMQ_PORT: ${RMQ_PORT}
+      RMQ_USERNAME: ${RMQ_USERNAME}
+      RMQ_PASSWORD: ${RMQ_PASSWORD}
+      RMQ_QUEUE: ${RMQ_QUEUE}
+      NODE_ENV: ${NODE_ENV}
+  
+  db:
+    container_name: db
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    networks:
+      - db-network
+    environment:
+      MYSQL_ROOT_PASSWORD: supersecretpassword
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+
+  rabbit:
+    networks:
+      - rabbit-network
+    container_name: rabbit
+    image: rabbitmq:3.8-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RMQ_PASSWORD}
+    
+networks:
+  rabbit-network:
+    driver: bridge
+  db-network:
+    driver: bridge
